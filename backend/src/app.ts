@@ -11,10 +11,10 @@ server.on("connection", (socket) => {
   //What do to when our server gets a message from said socket
   socket.on("message", (data) => {
     //Turns buffer back into string/JSON
-    const senha = data.toLocaleString();
+    const senhas = data.toLocaleString();
     //Share message to each connected socket
     sockets.forEach((socket) => {
-      socket.send(senha);
+      socket.send(senhas);
     });
   });
 });

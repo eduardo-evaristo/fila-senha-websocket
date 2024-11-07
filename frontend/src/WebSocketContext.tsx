@@ -1,4 +1,5 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { SenhasContext } from "./SenhasContext";
 
 //Type this better
 const WebSocketContext = createContext<Record<any, any>>({});
@@ -6,8 +7,7 @@ const WebSocketContext = createContext<Record<any, any>>({});
 //Custom context provider
 function WebSocketProvider({ children }) {
   const [socket, setSocket] = useState<WebSocket>();
-  //Criar definição do que devo receber
-  const [senhas, setSenhas] = useState<any[]>([]);
+  const { state, handleSocket } = useContext(SenhasContext);
 
   //UseEffect que estabelece conexão com web socket
   useEffect(() => {
@@ -22,18 +22,24 @@ function WebSocketProvider({ children }) {
     socket.onerror = () => {
       console.error("Conexão com o socket mal-sucedida!");
     };
-    //Ao receber mensagem
-    socket.onmessage = (message) => {
-      const senhaNova = JSON.parse(message.data);
-      setSenhas((prevSenhas) => [...prevSenhas, senhaNova]);
-      //setMessages([...messages, newMessage]);
-    };
   }, []);
+
+  // useEffect(() => {
+  //   if (socket) {
+  //     socket.send(JSON.stringify(state));
+  //   }
+  // }, [state]);
+
   return (
-    <WebSocketContext.Provider value={{ socket, senhas }}>
+    <WebSocketContext.Provider value={{ socket }}>
       {children}
     </WebSocketContext.Provider>
   );
 }
 
-export { WebSocketContext, WebSocketProvider };
+function useWebSocket() {
+  const { socket } = useContext(WebSocketContext);
+  return socket;
+}
+
+export { useWebSocket, WebSocketProvider };
