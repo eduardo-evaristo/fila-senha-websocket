@@ -1,5 +1,6 @@
 import { createContext, useReducer } from "react";
 import { useWebSocket } from "./WebSocketContext";
+import { saveToLocalStorage } from "./utils/localStorage";
 
 function geradorSenha() {
   const numeroAleatorio = Math.trunc(Math.random() * 500) + 1;
@@ -33,6 +34,7 @@ function reducer(state, action) {
         stepSenha: 0,
       };
       action.socket.send(JSON.stringify(returnedState));
+      saveToLocalStorage(returnedState);
       return returnedState;
     }
 
@@ -45,6 +47,7 @@ function reducer(state, action) {
           state.stepSenha === 0 ? state.stepSenha : state.stepSenha - 1,
       };
       action.socket.send(JSON.stringify(returnedState));
+      saveToLocalStorage(returnedState);
       return returnedState;
     }
     case "anteriorSenha": {
@@ -56,8 +59,12 @@ function reducer(state, action) {
             : state.stepSenha,
       };
       action.socket.send(JSON.stringify(returnedState));
+      saveToLocalStorage(returnedState);
       return returnedState;
     }
+    case "localStorage":
+      action.socket.send(JSON.stringify(action.payload));
+      return action.payload;
     case "socket":
       return action.payload;
   }
@@ -86,9 +93,20 @@ function SenhasProvider({ children }) {
     dispatch({ type: "socket", payload });
   }
 
+  function handleLocalStorage(payload) {
+    dispatch({ type: "localStorage", payload, socket });
+  }
+
   return (
     <SenhasContext.Provider
-      value={{ state, handleNova, handlePrev, handleProx, handleSocket }}
+      value={{
+        state,
+        handleNova,
+        handlePrev,
+        handleProx,
+        handleSocket,
+        handleLocalStorage,
+      }}
     >
       {children}
     </SenhasContext.Provider>
