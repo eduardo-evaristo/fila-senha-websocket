@@ -1,46 +1,44 @@
-import { useContext, useEffect } from "react";
-//Importação de componentes necessários
+import { useContext } from "react";
 import { RightColumn, LeftColumn } from "./components/FilaSenhas/Columns";
 import Senha from "./components/FilaSenhas/Senha";
 import { SenhasContext } from "./SenhasContext";
-import { useWebSocket } from "./WebSocketContext";
 
 export default function FilaSenhas() {
-  const { state, handleSocket } = useContext(SenhasContext);
+  const { state } = useContext(SenhasContext); // Access queue and current step
 
-  const socket = useWebSocket();
-
-  useEffect(() => {
-    if (socket) {
-      socket.onmessage = (message) => {
-        console.log(message);
-        handleSocket(JSON.parse(message.data));
-      };
-    }
-  }, [socket]);
-
-  //Evento para ir à última senha possível, isso é, a nova senha que for gerada
-  //TODO: Checar possibilidade de refatorar essa função usando condições dentro das outras duas funções
+  const { queue, currentStep } = state;
 
   return (
     <div className="wrapper">
       <RightColumn>
-        <Senha
-          senha={state.senhas[state.senhas.length - state.stepSenha - 1]}
-          atual={true}
-          key={Date.now()}
-        />
+        {/* Render the current "senha" */}
+        {queue.length > 0 && (
+          <Senha
+            senha={queue[queue.length - currentStep - 1]}
+            atual={true}
+            key={Date.now()} // Ensure unique keys
+          />
+        )}
       </RightColumn>
       <LeftColumn>
-        <Senha
-          senha={state.senhas[state.senhas.length - state.stepSenha - 2]}
-        />
-        <Senha
-          senha={state.senhas[state.senhas.length - state.stepSenha - 3]}
-        />
-        <Senha
-          senha={state.senhas[state.senhas.length - state.stepSenha - 4]}
-        />
+        {queue[queue.length - currentStep - 2] && (
+          <Senha
+            senha={queue[queue.length - currentStep - 2]} // 1st previous senha
+            key={`prev-1`}
+          />
+        )}
+        {queue[queue.length - currentStep - 3] && (
+          <Senha
+            senha={queue[queue.length - currentStep - 3]} // 2nd previous senha
+            key={`prev-2`}
+          />
+        )}
+        {queue[queue.length - currentStep - 4] && (
+          <Senha
+            senha={queue[queue.length - currentStep - 4]} // 3rd previous senha
+            key={`prev-3`}
+          />
+        )}
       </LeftColumn>
     </div>
   );

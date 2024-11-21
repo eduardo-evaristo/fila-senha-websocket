@@ -1,111 +1,59 @@
-import { createContext, useReducer } from "react";
+import { createContext, useState, useEffect } from "react";
 import { useWebSocket } from "./WebSocketContext";
-import { saveToLocalStorage } from "./utils/localStorage";
-
-function geradorSenha() {
-  const numeroAleatorio = Math.trunc(Math.random() * 500) + 1;
-  return `D${numeroAleatorio}`;
-}
-
-function geradorGuiche() {
-  return Math.trunc(Math.random() * 10) + 1;
-}
-
-function geraSenha() {
-  const novaSenha = {
-    tipo: "Convencional",
-    senha: geradorSenha(),
-    guiche: geradorGuiche(),
-  };
-  return novaSenha;
-}
 
 const SenhasContext = createContext<Record<any, any>>({});
 
-const initialState = { senhas: [], stepSenha: 0 };
-
-function reducer(state, action) {
-  console.log(action);
-  switch (action.type) {
-    case "novaSenha": {
-      const returnedState = {
-        ...state,
-        senhas: [...state.senhas, action.payload],
-        stepSenha: 0,
-      };
-      action.socket.send(JSON.stringify(returnedState));
-      saveToLocalStorage(returnedState);
-      return returnedState;
-    }
-
-    case "proximaSenha": {
-      const returnedState = {
-        ...state,
-        senhas:
-          state.stepSenha === 0 ? [...state.senhas, geraSenha()] : state.senhas,
-        stepSenha:
-          state.stepSenha === 0 ? state.stepSenha : state.stepSenha - 1,
-      };
-      action.socket.send(JSON.stringify(returnedState));
-      saveToLocalStorage(returnedState);
-      return returnedState;
-    }
-    case "anteriorSenha": {
-      const returnedState = {
-        ...state,
-        stepSenha:
-          state.senhas.length > state.stepSenha
-            ? state.stepSenha + 1
-            : state.stepSenha,
-      };
-      action.socket.send(JSON.stringify(returnedState));
-      saveToLocalStorage(returnedState);
-      return returnedState;
-    }
-    case "localStorage":
-      action.socket.send(JSON.stringify(action.payload));
-      return action.payload;
-    case "socket":
-      return action.payload;
-  }
-}
+// Initial empty state for the context
+const initialState = {
+  queue: [],
+  currentStep: 0,
+};
 
 function SenhasProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, setState] = useState(initialState); // Local state mirrors server state
   const socket = useWebSocket();
 
-  function handleNova() {
-    //Novo objeto literal de senha
-    const novaSenha = geraSenha();
-    dispatch({ type: "novaSenha", payload: novaSenha, socket });
+  useEffect(() => {
+    if (socket) {
+      // Listen for messages from the WebSocket server
+      socket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+
+        if (data.type === "update") {
+          // Update local state with data from the server
+          setState({ queue: data.queue, currentStep: data.currentStep });
+        } else if (data.type === "error") {
+          console.error(data.message);
+        }
+      };
+    }
+  }, [socket]);
+
+  // Actions send simple commands to the server
+  function handleNova(tipo: number) {
+    socket.send(JSON.stringify({ action: "generate", type: tipo }));
   }
 
-  //Evento para ir à próxima senha sem gerar uma nova
   function handleProx() {
-    dispatch({ type: "proximaSenha", socket });
+    socket.send(JSON.stringify({ action: "prev" }));
   }
-  //Evento para ir à senha posterior
+
   function handlePrev() {
-    dispatch({ type: "anteriorSenha", socket });
+    socket.send(JSON.stringify({ action: "next" }));
   }
 
-  function handleSocket(payload) {
-    dispatch({ type: "socket", payload });
-  }
-
-  function handleLocalStorage(payload) {
-    dispatch({ type: "localStorage", payload, socket });
+  function handleClear() {
+    socket.send(JSON.stringify({ action: "clear" }));
   }
 
   return (
     <SenhasContext.Provider
       value={{
-        state,
+        state, // Contains the queue and current step
         handleNova,
-        handlePrev,
         handleProx,
-        handleSocket,
-        handleLocalStorage,
+        handlePrev,
+        handleClear,
       }}
     >
       {children}

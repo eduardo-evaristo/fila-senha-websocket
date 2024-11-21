@@ -24,7 +24,7 @@
     background-color: #354f52;
     padding: 2rem;
     border-radius: 20px;
-    width: 50%;
+    width: 70%;
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     animation-name: bubble;
     animation-duration: 1s;
@@ -65,7 +65,7 @@
     background-color: #354f52;
     padding: 2rem;
     border-radius: 20px;
-    width: 300px;
+    width: 350px;
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
   }
   .wrapper .left__column .senha h3 {
