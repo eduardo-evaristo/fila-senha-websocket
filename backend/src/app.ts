@@ -6,15 +6,15 @@ import { IncomingMessage } from "http";
 let sockets: WebSocket[] = [];
 let queue: any[] = [];
 let currentStep = 0;
+let senhaCounter = 1; // Counter to generate sequential numbers
 
 // Utility functions to generate data
 function generateSenha(tipo: string) {
-  const randomNumber = Math.trunc(Math.random() * 500) + 1;
   const guiche = Math.trunc(Math.random() * 10) + 1;
 
   return {
     tipo,
-    senha: `${tipo === "Preferencial" ? "P" : "D"}${randomNumber}`,
+    senha: senhaCounter++, // Use the counter and increment it
     guiche,
   };
 }
@@ -76,6 +76,7 @@ server.on("connection", (socket: WebSocket, req: IncomingMessage) => {
           // Clear the queue and reset state
           queue = [];
           currentStep = 0;
+          senhaCounter = 1; // Reset the counter
           broadcast({ type: "update", queue, currentStep });
           console.log("Broadcasting cleared state:", { queue, currentStep });
 
